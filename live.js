@@ -116,6 +116,33 @@ function startPeakCountdown(){
  paint();
  if(peakHomeCountdownTimer===null && target>Date.now())peakHomeCountdownTimer=setInterval(paint,1000);
 }
+function peakRulebook(){
+ return section(`<div class="peak-rules">
+   <div class="peak-rules-intro"><div class="eyebrow">THE OFFICIAL RULEBOOK</div><h2>How to play Taskmaster PEAK 26</h2>
+   <p>Four weekly rounds. Two challenges in each round. Compete for yourself and your site — and let Peccy decide whether your efforts are genius or complete nonsense.</p></div>
+   <div class="peak-rule-grid">
+     <article class="peak-rule"><span class="peak-rule-number">01</span><div><h3>Open your weekly envelopes</h3>
+       <p>Every Wednesday at <strong>18:00 UK time</strong>, a new <strong>prize task</strong> and <strong>minigame</strong> unlock. You have seven days to enter both. When the following Wednesday's deadline arrives, submissions for that round close.</p>
+       <p>Future tasks stay sealed in the app until their week begins.</p></div></article>
+     <article class="peak-rule"><span class="peak-rule-number">02</span><div><h3>The prize task: one photo, one pitch</h3>
+       <p>Follow that week's instructions, take <strong>one original photograph</strong>, and write a <strong>1–50 word pitch</strong> explaining your entry to Peccy.</p>
+       <p>You get <strong>one final submission</strong> per week. Once submitted, your photo and words are locked, so check them carefully before pressing Submit.</p>
+       <p>Prize entries are judged for <strong>originality (40%)</strong>, <strong>humour (40%)</strong> and <strong>following the task (20%)</strong>.</p></div></article>
+     <article class="peak-rule"><span class="peak-rule-number">03</span><div><h3>The minigame: two chances</h3>
+       <p>Each week has a different playable challenge. You get <strong>two official attempts</strong>, and beginning one uses an attempt — so practise first if you fancy improving your odds.</p>
+       <p>Your best eligible completed attempt is considered for judging. The objective part is worth up to <strong>50 points</strong>, with another <strong>50 points</strong> for Peccy's creativity assessment.</p>
+       <p>Your objective result can appear straight away. The final judging remains private until the host publishes results.</p></div></article>
+     <article class="peak-rule"><span class="peak-rule-number">04</span><div><h3>Climb the championship table</h3>
+       <p>The prize task and minigame are <strong>ranked separately</strong> each week. Completed entries earn championship points according to their finishing position:</p>
+       <div class="peak-points"><span><b>1st</b>5 pts</span><span><b>2nd</b>4 pts</span><span><b>3rd</b>3 pts</span><span><b>4th</b>2 pts</span><span><b>5th+</b>1 pt</span></div>
+       <p><strong>No valid completed entry means 0 points.</strong> Your individual points add up over the four weeks, and your site competes on average points so different team sizes can be compared.</p></div></article>
+     <article class="peak-rule"><span class="peak-rule-number">05</span><div><h3>Peccy judges — the host decides</h3>
+       <p>After a round closes, the host reviews entries, checks the rankings and approves the scores. <strong>Nothing appears on the public leaderboard until the host explicitly releases it.</strong></p>
+       <p>Week 4 is extra secret: final-week standings and the winners stay hidden until the host completes the <strong>Zoom grand finale</strong> and authorises the reveal.</p></div></article>
+   </div>
+   <div class="peak-rules-footer"><strong>Most importantly:</strong> keep it original, follow your task instructions, and remember that a terrible idea delivered with confidence is still a terrible idea. Peccy may love it.</div>
+ </div>`); 
+}
 function playerHome(){
  const profile=state.profile||{},rounds=state.config?.rounds||[],now=Date.now();
  const first=rounds[0],preLaunch=Boolean(first&&now<Date.parse(first.starts_at));
@@ -162,31 +189,7 @@ function playerHome(){
      <div><span>OFFICIAL GAME ATTEMPTS SUBMITTED</span><strong>${finished} <small>/ 8 possible</small></strong></div>
    </div>
    <p class="peak-progress-note">Your official attempts are limited, but practice games don't use them. Only published scores count towards the visible standings.</p>`);
- const rules=section(`<div class="peak-rules">
-   <div class="peak-rules-intro"><div class="eyebrow">THE OFFICIAL RULEBOOK</div><h2>How to play Taskmaster PEAK 26</h2>
-   <p>Four weekly rounds. Two challenges in each round. Compete for yourself and your site — and let Peccy decide whether your efforts are genius or complete nonsense.</p></div>
-   <div class="peak-rule-grid">
-     <article class="peak-rule"><span class="peak-rule-number">01</span><div><h3>Open your weekly envelopes</h3>
-       <p>Every Wednesday at <strong>18:00 UK time</strong>, a new <strong>prize task</strong> and <strong>minigame</strong> unlock. You have seven days to enter both. When the following Wednesday's deadline arrives, submissions for that round close.</p>
-       <p>Future tasks stay sealed in the app until their week begins.</p></div></article>
-     <article class="peak-rule"><span class="peak-rule-number">02</span><div><h3>The prize task: one photo, one pitch</h3>
-       <p>Follow that week's instructions, take <strong>one original photograph</strong>, and write a <strong>1–50 word pitch</strong> explaining your entry to Peccy.</p>
-       <p>You get <strong>one final submission</strong> per week. Once submitted, your photo and words are locked, so check them carefully before pressing Submit.</p>
-       <p>Prize entries are judged for <strong>originality (40%)</strong>, <strong>humour (40%)</strong> and <strong>following the task (20%)</strong>.</p></div></article>
-     <article class="peak-rule"><span class="peak-rule-number">03</span><div><h3>The minigame: two chances</h3>
-       <p>Each week has a different playable challenge. You get <strong>two official attempts</strong>, and beginning one uses an attempt — so practise first if you fancy improving your odds.</p>
-       <p>Your best eligible completed attempt is considered for judging. The objective part is worth up to <strong>50 points</strong>, with another <strong>50 points</strong> for Peccy's creativity assessment.</p>
-       <p>Your objective result can appear straight away. The final judging remains private until the host publishes results.</p></div></article>
-     <article class="peak-rule"><span class="peak-rule-number">04</span><div><h3>Climb the championship table</h3>
-       <p>The prize task and minigame are <strong>ranked separately</strong> each week. Completed entries earn championship points according to their finishing position:</p>
-       <div class="peak-points"><span><b>1st</b>5 pts</span><span><b>2nd</b>4 pts</span><span><b>3rd</b>3 pts</span><span><b>4th</b>2 pts</span><span><b>5th+</b>1 pt</span></div>
-       <p><strong>No valid completed entry means 0 points.</strong> Your individual points add up over the four weeks, and your site competes on average points so different team sizes can be compared.</p></div></article>
-     <article class="peak-rule"><span class="peak-rule-number">05</span><div><h3>Peccy judges — the host decides</h3>
-       <p>After a round closes, the host reviews entries, checks the rankings and approves the scores. <strong>Nothing appears on the public leaderboard until the host explicitly releases it.</strong></p>
-       <p>Week 4 is extra secret: final-week standings and the winners stay hidden until the host completes the <strong>Zoom grand finale</strong> and authorises the reveal.</p></div></article>
-   </div>
-   <div class="peak-rules-footer"><strong>Most importantly:</strong> keep it original, follow your task instructions, and remember that a terrible idea delivered with confidence is still a terrible idea. Peccy may love it.</div>
- </div>`);
+ const rules=peakRulebook();
  insert(`Welcome, ${clean(profile.firstName||'contestant')}.`,`<div class="stack">${lead}${progress}${rules}</div>`);
  document.querySelectorAll('[data-a="tasks"]').forEach(x=>x.onclick=()=>navigate('tasks'));
  document.querySelectorAll('[data-a="practice"]').forEach(x=>x.onclick=()=>navigate('practice'));
@@ -223,6 +226,7 @@ function hostHome(){
  })
 }
 function hostPreview(){
+ if(peakHomeCountdownTimer!==null){clearInterval(peakHomeCountdownTimer);peakHomeCountdownTimer=null;}
  const d=state.host||{participants:[],prizes:[],attempts:[]};
  const participants=d.participants||[];
  const who=participants.find(p=>p.id===state.previewPerson)||null;
@@ -234,13 +238,24 @@ function hostPreview(){
  const tab=state.previewTab||'home',week=state.previewWeek||1,r=rounds.find(x=>x.id===week),task=ROUNDS[week-1];
  let content='';
  if(tab==='home'){
-  content=`<h2>Welcome, ${clean(first)}.</h2><div class="eyebrow">${clean(site)} · PEAK 26</div>
-  <p>${next?(upcoming(next)?'The competition is approaching.':'The task envelopes are open.'):'Peccy has finished taking submissions.'}</p>
-  ${next?`<p>Next deadline: <b>${date(next.ends_at)}</b></p>`:''}
-  <div class="live-cols"><div class="live-card"><h3>Prize entries</h3><strong>${prizeEntries.length} of 4</strong></div>
-  <div class="live-card"><h3>Game attempts</h3><strong>${attempts.filter(a=>a.status==='submitted').length} of 8</strong></div></div>
-  <div class="actions" style="margin:16px 0"><button class="btn" data-preview-tab="tasks">View task envelopes</button><button class="btn secondary" data-preview-tab="practice">Practice a mini-game</button></div>
-  <h2>How it works</h2><p>One original photo with a 1–50 word pitch, final on submission. Two official attempts at each mini-game. Peccy judges, the host approves, and results appear when published.</p><p>The final results remain sealed until the Zoom grand finale.</p>`;
+  const firstRound=rounds[0],beforeFirst=Boolean(firstRound&&upcoming(firstRound));
+  const liveRound=rounds.find(w=>active(w));
+  const intro=beforeFirst?`<div class="peak-prelaunch"><div class="peak-launch-eyebrow">THE TASKMASTER HAS SUMMONED YOU</div><h2>Peccy is preparing the envelopes.</h2>
+   <p>Four weeks. Eight ridiculous challenges. Eleven contestants. Absolutely no guarantee of dignity.</p>
+   ${peakCountdownMarkup(firstRound.starts_at,true)}
+   <p class="peak-release-date"><strong>Week 1 begins:</strong> ${date(firstRound.starts_at)} (UK time)</p>
+   <p>Both tasks unlock together at 18:00.</p></div>`
+   :liveRound?`<div class="peak-live-week"><div class="peak-launch-eyebrow">WEEK ${liveRound.id} · NOW OPEN</div><h2>Your time starts now.</h2>
+    <p>Week ${liveRound.id} closes ${date(liveRound.ends_at)} (UK time).</p>
+    <div class="peak-live-tasks"><div><span>PRIZE TASK</span><strong>${clean(liveRound.prize_title)}</strong></div><div><span>MINIGAME</span><strong>${clean(liveRound.activity_title)}</strong></div></div></div>`
+   :`<div class="peak-prelaunch"><h2>${next?'The next envelopes are sealed.':'The tasks have finished.'}</h2><p>${next?`The next round opens ${date(next.starts_at)}.`:'All four rounds have closed; check the published leaderboard.'}</p></div>`;
+  content=`${intro}
+  <div class="peak-progress-grid">
+    <div><span>PRIZE TASKS ENTERED</span><strong>${prizeEntries.length} <small>/ 4</small></strong></div>
+    <div><span>OFFICIAL GAME ATTEMPTS SUBMITTED</span><strong>${attempts.filter(a=>a.status==='submitted').length} <small>/ 8 possible</small></strong></div>
+  </div>
+  <div class="actions" style="margin:16px 0"><button class="btn" data-preview-tab="tasks">View task envelopes</button><button class="btn secondary" data-preview-tab="practice">Try a practice game</button></div>
+  ${peakRulebook()}`;
  }else if(tab==='tasks'){
   content=`<h2>The task envelopes.</h2>${rounds.map(w=>`<div class="live-result">
   <div class="eyebrow">WEEK ${w.id} · ${date(w.starts_at)} – ${date(w.ends_at)}</div>
@@ -290,6 +305,7 @@ function hostPreview(){
  document.querySelector('#preview-refresh').onclick=async()=>{try{await refreshHost();state.previewBoard=null;state.previewError='';hostPreview()}catch(e){notice(e.message,true)}};
  document.querySelectorAll('[data-preview-tab]').forEach(el=>el.onclick=()=>{if(state.gameStop){state.gameStop();state.gameStop=null}state.previewTab=el.dataset.previewTab;hostPreview()});
  document.querySelectorAll('[data-preview-task]').forEach(el=>el.onclick=()=>{if(state.gameStop){state.gameStop();state.gameStop=null}state.previewWeek=Number(el.dataset.week);state.previewTab=el.dataset.previewTask;hostPreview()});
+ if(tab==='home'&&rounds[0]&&upcoming(rounds[0]))startPeakCountdown();
  if(tab==='practice')state.gameStop=mountPractice(document.querySelector('#preview-practice-slot'));
  if(tab==='activity'&&r&&active(r)){
   const btn=document.querySelector('#preview-game-button');
