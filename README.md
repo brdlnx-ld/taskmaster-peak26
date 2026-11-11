@@ -32,13 +32,15 @@ Expected site: `https://brdlnx-ld.github.io/taskmaster-peak26/`.
 
 No files in this package contain service-role keys, PIN peppers or registration tokens.
 
-## Shared looping GitHub music (optional)
+## Shared looping GitHub music
 
-The website has one **Music Off / Music On** button in its header. It plays the same shared GitHub-hosted track for any visitor who opts in.
+The website plays **theme.mp3** (in the GitHub repository root) on a loop.
 
-1. Choose an MP3 you have permission to publish to all website visitors.
-2. In this repository's main branch, upload the file to the repository root and name it **`theme.mp3`** (lowercase, exact spelling).
-3. GitHub Pages serves it at `https://brdlnx-ld.github.io/taskmaster-peak26/theme.mp3`.
-4. Visitors press **Music Off** to begin playback; the file loops until they press **Music On** to turn it off.
+- The default music setting is **ON** on first visit. The player attempts to start immediately when the browser permits audio autoplay; otherwise, the first ordinary tap or keypress allows the soundtrack to begin. Browser sound restrictions cannot be bypassed.
+- Visitors can press **Music On** to switch it off, and **Music Off** to switch it back on. The choice is saved in browser localStorage and remains in effect across reloads.
+- There is no local-file music picker. Everyone uses the shared repository file, provided it can legally be distributed.
+- The file is served at `https://brdlnx-ld.github.io/taskmaster-peak26/theme.mp3`.
 
-The player starts muted, as browsers usually block unsolicited autoplay. Music continues while navigating within the website. There is **no local file selector, upload form, or audio stored in Supabase**. The track file should be added separately to GitHub; it is intentionally absent from this code commit. The previously uploaded copyrighted TV soundtrack is **not** part of the repository. Never upload music without the rights to distribute it.
+## Host navigation
+
+The header has a **← Host dashboard** button whenever the host is on a different host screen, including Player View and Judging. When a host session is still available while viewing the player interface, the same button switches back to the host dashboard after checking authorisation.
