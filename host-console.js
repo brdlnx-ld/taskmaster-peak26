@@ -35,7 +35,7 @@ import { LIVE_CONFIG } from './live-config.js';
   function btn(label,action,id='',style='secondary'){return `<button type="button" class="btn ${style}" data-do="${action}" ${id?`data-id="${h(id)}"`:''}>${h(label)}</button>`}
   function message(){return state.message?`<p class="host-alert ${state.error?'host-error':''}" role="alert">${h(state.message)}</p>`:''}
   function header(){return `<header class="host-top">
-     <div><span class="host-kicker">SOUTHERN CLUSTER • TASKMASTER PEAK 26</span><h1>Host Control Room</h1><p>Dedicated host console · never switches to Player View</p></div>
+     <div><span class="host-kicker">SOUTHERN CLUSTER • TASKMASTER PEAK 26</span><h1>Host Control Room</h1><p>HOST CONSOLE v16 · private administration only</p></div>
      <div class="host-top-actions"><a class="btn secondary" href="./index.html">Open player website</a>${state.host?btn('Refresh','refresh')+btn('Sign out','logout'):""}</div>
   </header>`}
   function login(){
