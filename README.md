@@ -31,3 +31,14 @@ Expected site: `https://brdlnx-ld.github.io/taskmaster-peak26/`.
 - Finale stays embargoed via published-score snapshots; confirm the Zoom host workflow end-to-end before launch.
 
 No files in this package contain service-role keys, PIN peppers or registration tokens.
+
+## Optional looping music
+
+The website header includes **Music Off / Music On** and **Choose track** controls on all app screens.
+
+- Music starts **off**. Choose an audio file from your own device; it loops until muted.
+- The browser saves the selected local audio in IndexedDB (where supported), so it can be reused on that same browser/device. Music preference is remembered.
+- Due to browser autoplay rules, after reloading you may need to tap **Music** before playback resumes.
+- The selected file is **never uploaded to the public GitHub repository or Supabase**. Each visitor must provide their own local copy.
+- Only publish a site-wide audio file if you have rights to distribute that recording. The supplied commercial TV theme is **not** included in the public website.
+
