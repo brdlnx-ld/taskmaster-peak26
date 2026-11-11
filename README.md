@@ -32,13 +32,13 @@ Expected site: `https://brdlnx-ld.github.io/taskmaster-peak26/`.
 
 No files in this package contain service-role keys, PIN peppers or registration tokens.
 
-## Optional looping music
+## Shared looping GitHub music (optional)
 
-The website header includes **Music Off / Music On** and **Choose track** controls on all app screens.
+The website has one **Music Off / Music On** button in its header. It plays the same shared GitHub-hosted track for any visitor who opts in.
 
-- Music starts **off**. Choose an audio file from your own device; it loops until muted.
-- The browser saves the selected local audio in IndexedDB (where supported), so it can be reused on that same browser/device. Music preference is remembered.
-- Due to browser autoplay rules, after reloading you may need to tap **Music** before playback resumes.
-- The selected file is **never uploaded to the public GitHub repository or Supabase**. Each visitor must provide their own local copy.
-- Only publish a site-wide audio file if you have rights to distribute that recording. The supplied commercial TV theme is **not** included in the public website.
+1. Choose an MP3 you have permission to publish to all website visitors.
+2. In this repository's main branch, upload the file to the repository root and name it **`theme.mp3`** (lowercase, exact spelling).
+3. GitHub Pages serves it at `https://brdlnx-ld.github.io/taskmaster-peak26/theme.mp3`.
+4. Visitors press **Music Off** to begin playback; the file loops until they press **Music On** to turn it off.
 
+The player starts muted, as browsers usually block unsolicited autoplay. Music continues while navigating within the website. There is **no local file selector, upload form, or audio stored in Supabase**. The track file should be added separately to GitHub; it is intentionally absent from this code commit. The previously uploaded copyrighted TV soundtrack is **not** part of the repository. Never upload music without the rights to distribute it.
