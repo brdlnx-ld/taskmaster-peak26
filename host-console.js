@@ -8,7 +8,7 @@ import { LIVE_CONFIG } from './live-config.js';
     token:sessionStorage.getItem('peak26-host')||'',
     refreshToken:sessionStorage.getItem('peak26-host-refresh')||'',
     host:null,view:'dashboard',reviewWeek:1,rankLists:{},leaderboard:null,
-    slides:[],slide:0,broadcast:null,busy:false,message:'',error:false
+    slides:[],slide:0,broadcast:null,busy:false,message:'',error:false,slack:null
   };
   const h=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&#39;'}[c]));
   const t=(iso)=>iso?new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',dateStyle:'medium',timeStyle:'short'}).format(new Date(iso)):'—';
@@ -58,7 +58,7 @@ import { LIVE_CONFIG } from './live-config.js';
       }catch(e){clearTokens();fail(e)}
     };
   }
-  function nav(){const sections=[['dashboard','Dashboard'],['review','Judging'],['people','Participants'],['scores','Published scores'],['finale','Grand finale']];
+  function nav(){const sections=[['dashboard','Dashboard'],['review','Judging'],['people','Participants'],['scores','Published scores'],['slack','Slack'],['finale','Grand finale']];
     return `<nav class="host-nav">${sections.map(([id,name])=>`<button class="${state.view===id?'active':''}" data-do="nav" data-id="${id}">${name}</button>`).join('')}</nav>`}
   function cards(){const a=state.host||{};const p=a.participants||[],pr=a.prizes||[],at=a.attempts||[];
     return `<div class="host-stats"><div><small>Participants</small><strong>${p.filter(x=>x.active).length}/11</strong></div><div><small>Prize entries</small><strong>${pr.filter(x=>x.status==='final').length}</strong></div><div><small>Submitted attempts</small><strong>${at.filter(x=>x.status==='submitted').length}</strong></div></div>`}
@@ -101,6 +101,39 @@ import { LIVE_CONFIG } from './live-config.js';
     <section class="paper"><h2>Site averages</h2>${b.sites.map(x=>`<p><strong>${h(x.code)}</strong> — ${x.average} points on average</p>`).join('')}</section>
     <section class="paper"><h2>Published weekly verdicts</h2>${b.judgments.map(j=>`<div class="host-item"><strong>Week ${j.round_id} · ${h(j.task_type)} · ${h(name(j.player_id))}</strong><p>${j.points} pts · ${h(j.verdict)}</p></div>`).join('')||'<p>No published results yet.</p>'}</section>`;
   }
+  async function loadSlack(){state.slack=await api('host-slack-status')}
+  function slack(){
+ const s=state.slack;
+ if(!s)return `<section class="paper"><h2>Slack announcements</h2>${btn('Check Slack connection','slack-refresh')}</section>`;
+ const c=s.settings||{},ready=s.webhookConfigured===true,test=s.testSucceeded===true;
+ const status=x=>({sent:'Delivered',sending:'Sending',pending:'Queued',failed:'Failed',unknown:'Unconfirmed'}[x]||'Unknown');
+ return `<section class="paper">
+  <div class="eyebrow">PECCY'S ANNOUNCEMENT DESK</div><h2>Slack integration</h2>
+  <p>Posts go to the Slack channel selected when your incoming webhook was created. Your webhook URL is never shown in the browser.</p>
+  <div class="host-slack-badges"><strong>Webhook: ${ready?'Connected':'Not connected'}</strong><strong>Test: ${test?'Delivered':'Not tested'}</strong><strong>Automation: ${c.enabled?'ON':'OFF'}</strong></div>
+  <p><strong>Schedule:</strong> Wednesday 18:00 task launches, Tuesday 18:00 deadline reminders, and results when you approve publication.</p>
+  <p><strong>Finale protection:</strong> Week 4 results cannot be posted before the Zoom finale has been completed and the results released.</p>
+  ${ready?'':`<div class="host-slack-setup"><h3>Connect Slack</h3><p>Create a Slack incoming webhook for your chosen channel. In your Taskmaster Supabase project, save its URL in <strong>Vault</strong> under the exact name <code>peak26_slack_webhook</code>.</p><p>Never paste the webhook into chat or GitHub.</p><a href="https://supabase.com/dashboard/project/yydixabvablasptbkhhf/integrations/vault" target="_blank" rel="noopener noreferrer">Open Supabase Vault</a></div>`}
+  <div class="host-buttons">${btn('Refresh Slack connection','slack-refresh')}${btn('Send one test message','slack-test')}</div>
+ </section>
+ <section class="paper"><h2>Automatic posts</h2>
+  <p>Keep automation Off until you see the test message in the correct Slack channel. Settings affect future announcements only.</p>
+  <form id="slack-prefs" class="host-slack-preferences">
+   <label><input type="checkbox" name="enabled" ${c.enabled?'checked':''} ${!ready||!test?'disabled':''}> <strong>Enable automatic messages</strong></label>
+   <label><input type="checkbox" name="launch" ${c.launch_posts?'checked':''}> Weekly task-launch announcements</label>
+   <label><input type="checkbox" name="reminders" ${c.reminder_posts?'checked':''}> 24-hour deadline reminders</label>
+   <label><input type="checkbox" name="results" ${c.result_posts?'checked':''}> Published weekly and finale results</label>
+  </form>
+  <div class="host-buttons">${btn('Save Slack settings','slack-save')}</div>
+  ${!ready||!test?'<p class="sub small">Connect the webhook and successfully send a host-approved test before automation can be enabled.</p>':''}
+ </section>
+ <section class="paper"><h2>Delivery history</h2>
+  <p class="sub small">An announcement is only counted as delivered after Slack confirms it. No duplicates are intentionally queued.</p>
+  ${(s.events||[]).length?`<div class="host-stack">${s.events.map(e=>`<div class="host-item"><div><strong>${h(e.kind==='launch'?'Task launch':e.kind==='reminder'?'Deadline reminder':e.kind==='results'?'Published results':'Connection test')}${e.round_id?' · Week '+e.round_id:''}</strong>
+   <p>${h(status(e.status))} · ${t(e.created_at)}${e.sent_at?' · Delivered '+t(e.sent_at):''}${e.last_error?' · '+h(e.last_error):''}</p></div>
+   <div>${e.status==='failed'&&e.attempt_count<3?btn('Retry failed','slack-retry',e.id):''}</div></div>`).join('')}</div>`:'<p>No messages have been queued yet.</p>'}
+ </section>`;
+}
   function finale(){const d=state.host,p=d.publications.find(x=>x.round_id===4)||{};
     return `<section class="paper"><h2>Zoom grand finale</h2><p><strong>${p.released_at?'Published':p.judging_approved_at?'Final judging approved':'Week 4 results are sealed'}</strong></p>
       <p>Open the separate audience window for Zoom. The host controls stay on this screen.</p>
@@ -111,7 +144,7 @@ import { LIVE_CONFIG } from './live-config.js';
       <p class="sub small">This is irreversible. The buttons above do not publish results.</p></section>`}
   function render(){
     if(!state.host){login();return}
-    const contents={dashboard,review,people,scores,finale};
+    const contents={dashboard,review,people,scores,slack,finale};
     root.innerHTML=`<div class="host-wrap">${header()}${nav()}${message()}<main class="host-main">${(contents[state.view]||dashboard)()}</main>
        <footer>Host access only · Taskmaster PEAK 26 · All times Europe/London</footer></div>`;
   }
@@ -131,9 +164,20 @@ import { LIVE_CONFIG } from './live-config.js';
   }
   async function runAction(action,id){
     if(action==='logout'){clearTokens();state.message='Signed out.';render();return}
-    if(action==='nav'){state.view=id;state.message='';render();return}
+    if(action==='nav'){state.view=id;state.message='';if(id==='slack')await loadSlack();render();return}
     if(action==='open-review'){state.reviewWeek=Number(id);resetRanking();state.view='review';state.message='';render();return}
-    if(action==='refresh'){await load();say('Host data refreshed.');return}
+    if(action==='refresh'){await load();if(state.view==='slack')await loadSlack();say('Host data refreshed.');return}
+    if(action==='slack-refresh'){await loadSlack();say('Slack status refreshed.');return}
+    if(action==='slack-test'){if(!confirm('Send ONE real test message to the connected Slack channel?'))return;
+      await api('host-slack-test',{confirm:true});await loadSlack();
+      say('Test queued. Check Slack, then refresh for confirmed delivery.');return}
+    if(action==='slack-save'){const form=document.getElementById('slack-prefs');if(!form)throw Error('Slack settings not found');
+      const checked=k=>Boolean(form.elements.namedItem(k)?.checked);
+      const settings={enabled:checked('enabled'),launch:checked('launch'),reminders:checked('reminders'),results:checked('results')};
+      if(!confirm(settings.enabled?'Enable automatic Slack messages?':'Save Slack settings with automation Off?'))return;
+      await api('host-slack-settings',{...settings,confirm:true});await loadSlack();say(settings.enabled?'Slack automation is enabled.':'Slack automation is Off.');return}
+    if(action==='slack-retry'){if(!confirm('Retry this failed message? Check the channel for duplicates first.'))return;
+      await api('host-slack-retry',{eventId:id,confirm:true});await loadSlack();say('Retry requested.');return}
     if(action==='rank-up'||action==='rank-down'){
       const [kind,idxstr]=id.split(':'),list=state.rankLists[kind],idx=Number(idxstr),next=idx+(action==='rank-up'?-1:1);
       if(!list||next<0||next>=list.length)return;
@@ -167,7 +211,7 @@ import { LIVE_CONFIG } from './live-config.js';
       if(n===4&&!confirm('Have you COMPLETED the Zoom reveal? This permanently publishes Week 4 and championship winners.'))return;
       if(n!==4&&!confirm(`Publish Week ${n} results to players now?`))return;
       await api('host-publish',{round:n,...(n===4?{confirmFinale:true}:{})});await load();state.leaderboard=null;
-      say(`Week ${n} results published. Slack delivery is not yet configured.`);return;
+      say(`Week ${n} results published. Slack posting follows your Slack settings; check the Slack tab for delivery status.`);return;
     }
     if(action==='load-scores'){state.leaderboard=await api('leaderboard');say('Released scoreboard loaded.');return}
     if(action==='reset-pin'){
