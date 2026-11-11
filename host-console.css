@@ -30,3 +30,14 @@ body{margin:0;background:#62131e;color:#f7e6ce;font-family:'DM Sans',system-ui,s
 .host-wrap footer{color:#d3b28f;font-size:12px;margin-top:24px}
 .host-main .paper{box-shadow:3px 5px 0 #350c13}
 @media(max-width:650px){.host-top-actions{width:100%}.host-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.host-item{display:grid}.host-item .host-buttons{justify-content:flex-start}.host-nav button{flex:1}.host-top-actions .btn{padding:10px}.host-main .paper{padding:18px}}
+
+/* Slack announcement desk (host only) */
+.host-slack-badges{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.host-slack-badges strong{font-size:12px;border-radius:7px;border:1px solid #d7b989;background:#fff1d9;padding:10px 13px;color:#572b29}
+.host-slack-setup{border-left:4px solid #8d2030;background:#fff4e0;padding:15px;margin:19px 0;border-radius:4px}
+.host-slack-setup a{display:inline-flex;margin:6px 0 9px;color:#6b1c29;font-weight:800;text-decoration:underline}
+.host-slack-setup code{overflow-wrap:anywhere;font-size:12px;background:#e9d6b9;padding:2px 5px}
+.host-slack-preferences{display:grid;gap:10px;background:#fff4e0;border:1px solid #cfaf7e;padding:17px;border-radius:9px;margin:18px 0}
+.host-slack-preferences label{display:flex;gap:11px;align-items:center;font-size:14px;line-height:1.5;color:#412725}
+.host-slack-preferences input{width:21px;height:21px;accent-color:#76202a;flex-shrink:0}
+.host-slack-preferences input:disabled{opacity:.45}
