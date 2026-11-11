@@ -1,5 +1,5 @@
 /* Taskmaster PEAK 26 PWA v15: network-first so fixes propagate. */
-const CACHE='peak26-shell-v15';
+const CACHE='peak26-shell-v17';
 const ASSETS=['./','./index.html','./live.js','./music.js','./live-config.js','./live.css','./styles.css','./data.js','./games.js','./manifest.webmanifest','./assets/icon.svg'];
 self.addEventListener('install', event => {
   self.skipWaiting();
