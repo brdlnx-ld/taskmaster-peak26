@@ -1,0 +1,32 @@
+body{margin:0;background:#62131e;color:#f7e6ce;font-family:'DM Sans',system-ui,sans-serif;min-height:100vh}
+.host-wrap{max-width:1120px;margin:auto;padding:25px 18px 90px}
+.host-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:17px;border-bottom:1px solid #c4955866;padding-bottom:23px;margin-bottom:18px}
+.host-top h1{font:clamp(28px,4vw,44px) 'Special Elite',Georgia,serif;color:#f9e3b4;margin:10px 0}
+.host-top p{margin:0;color:#e9be8d}.host-kicker{font-weight:800;letter-spacing:2.2px;font-size:10px;color:#eabe7b}
+.host-top-actions,.host-buttons{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.host-top-actions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.host-nav{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:23px}
+.host-nav button{border:1px solid #c09456;color:#f8e4c9;background:#31090f;padding:12px 15px;border-radius:8px;min-height:44px;font-size:13px;font-weight:800}
+.host-nav button.active,.host-nav button:hover{background:#a57b3d;color:#fff}
+.host-main{display:grid;gap:18px}
+.host-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:19px 0}
+.host-stats>div{padding:15px;background:#fff4e0;border:1px solid #c3a478;border-radius:8px;display:grid;gap:6px}
+.host-stats small{color:#65443b;font-size:12px}.host-stats strong{font-size:29px;color:#641623}
+.host-stack{display:grid;gap:10px;margin:17px 0}
+.host-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #c9af8a;padding:12px 0}
+.host-item p{margin:6px 0;color:#6d4a40;font-size:13px}
+.host-submission{background:#fff6e4;border-left:4px solid #871c2b;margin:15px 0;padding:13px;border-radius:3px}
+.host-photo{max-width:min(100%,460px);max-height:340px;object-fit:contain;display:block;margin-top:10px;border:5px ridge #b28a4d}
+.host-avatar{width:85px;max-height:110px;object-fit:cover;border:3px ridge #ad8746}
+.host-alert{padding:13px 15px;background:#264836;border:1px solid #a5e0ba;border-radius:8px;color:#f5f6e5}
+.host-alert.host-error{background:#6e1b24;border-color:#f5a9a4;color:#fff2e5}
+.host-login{max-width:570px;margin:25px auto}
+.host-login form{margin-top:18px}
+.host-login .live-form{max-width:500px}
+.host-login .live-form input{background:#fff8ec;color:#231717}
+.host-item input[type="datetime-local"]{padding:9px;border-radius:7px;border:1px solid #b79e72;background:#fff7e5;color:#34211b;max-width:260px;display:block}
+.host-item .host-buttons{justify-content:flex-end}
+.host-main details{max-width:100%}.host-main pre{overflow:auto;max-height:280px;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
+.host-wrap footer{color:#d3b28f;font-size:12px;margin-top:24px}
+.host-main .paper{box-shadow:3px 5px 0 #350c13}
+@media(max-width:650px){.host-top-actions{width:100%}.host-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.host-item{display:grid}.host-item .host-buttons{justify-content:flex-start}.host-nav button{flex:1}.host-top-actions .btn{padding:10px}.host-main .paper{padding:18px}}
