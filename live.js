@@ -38,12 +38,18 @@ async function begin(){
 }
 function render(){
  const logged=state.role==='player'||state.role==='host';
+ const hostBack=(state.role==='host'&&state.page!=='home')||(state.role==='player'&&Boolean(state.hostJwt));
  const tabs=state.role==='host'?[['home','Host dashboard'],['preview','Player View'],['scores','Published scoreboard'],['finale','Grand finale']]:[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']];
- $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
+ $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${hostBack?button('← Host dashboard','host-back','secondary'):''}${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
  document.querySelectorAll('[data-nav]').forEach(x=>x.onclick=()=>navigate(x.dataset.nav));document.querySelectorAll('[data-a="logout"]').forEach(x=>x.onclick=logout);
+ document.querySelectorAll('[data-a="host-back"]').forEach(x=>x.onclick=async()=>{
+   if(state.role==='host'){state.message=null;state.error=false;navigate('home');return;}
+   try {await refreshHost();state.message=null;state.error=false;navigate('home');}
+   catch {state.hostJwt='';sessionStorage.removeItem('peak26-host');state.role=null;state.page='host-login';state.message='Host session expired. Please sign in again.';state.error=true;render();}
+ });
  document.querySelectorAll('[data-a="login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='login';render()});document.querySelectorAll('[data-a="host-login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='host-login';render()});
  if(!configured){insert('Launch setup required.',section('<h2>Secure backend not connected</h2><p>This project is ready for a dedicated Supabase project. Configure the public URL and publishable key in <code>live-config.js</code>, deploy the database migration and Edge Function, then connect a host account.</p><p>Until then, the unlimited-retry <a href="lab.html">mini-game lab</a> is available. No real accounts or championship points are active.</p>'));return}
- if(state.role==='host'){({home:hostHome,preview:hostPreview,scores:showScores,finale:finale}[state.page]||hostHome)();return}
+ if(state.role==='host'){({home:hostHome,preview:hostPreview,review:hostReview,scores:showScores,finale:finale}[state.page]||hostHome)();return}
  if(state.role==='player'){({home:playerHome,tasks:showTasks,prize:showPrize,activity:showActivity,scores:showScores,profile:profile,practice:practice}[state.page]||playerHome)();return}
  if(state.page==='register')register();else if(state.page==='host-login')hostScreen();else login();
 }
