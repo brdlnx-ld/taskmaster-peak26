@@ -20,3 +20,13 @@
 .peak-preview-content button:disabled{opacity:.45;cursor:not-allowed}
 .peak-preview-content .score-grid{margin:14px 0}
 @media(max-width:550px){.peak-preview-head>b{font-size:19px}.peak-preview-content{padding:15px 11px}.peak-preview-tabs{gap:5px;padding:8px}.peak-preview-tabs button{flex:1;padding:9px 7px}}
+
+
+/* Optional, user-supplied local soundtrack; always opt-in. */
+.peak-music-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-right:5px}
+.peak-music-toggle,.peak-music-choose{border-radius:8px;border:1px solid #c2a277;background:#fff3dd;color:#5e1d24;min-height:42px;padding:9px 12px;font:700 13px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.peak-music-toggle[aria-pressed="true"]{background:#bc944f;color:#270d13;border-color:#f5d29b}
+.peak-music-choose{background:#49131d;color:#fff0d8;border-color:#b48b59;font-size:12px}
+.peak-music-toggle:focus-visible,.peak-music-choose:focus-visible{outline:3px solid #f7da9f;outline-offset:2px}
+.peak-music-status{font:12px 'DM Sans',sans-serif;color:#f9d9b1}
+@media(max-width:600px){.peak-music-controls{width:100%;order:3;gap:7px}.peak-music-status{width:100%}.peak-music-choose{min-height:42px}}
