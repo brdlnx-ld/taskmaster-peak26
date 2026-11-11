@@ -49,7 +49,7 @@ async function refreshHost(){state.host=await api('host-dashboard',{},true);stat
 async function refreshPlayer(){state.me=await api('me');state.profile=state.me.profile;state.role='player'}
 function navigate(p){if(state.gameStop){state.gameStop();state.gameStop=null}state.page=p;render();window.scrollTo(0,0)}
 async function begin(){
- const requestHost=new URLSearchParams(location.search).get('host')==='1';
+ const requestHost=(window.__PEAK_HOST_ENTRY===true)||new URLSearchParams(location.search).get('host')==='1'||location.pathname.endsWith('/host.html');
  const hash=location.hash.match(/invite=([a-zA-Z0-9-]+)/);if(hash){state.invite=hash[1];sessionStorage.setItem('peak26-invite',state.invite);history.replaceState(null,'',location.pathname+location.search)}
  else state.invite=sessionStorage.getItem('peak26-invite')||'';
  if(!configured){render();return}
@@ -66,7 +66,7 @@ function render(){
  const logged=state.role==='player'||state.role==='host';
  const hostBack=(state.role==='host'&&state.page!=='home')||(state.role==='player'&&Boolean(state.hostJwt||state.hostRefreshToken));
  const tabs=state.role==='host'?[['home','Host dashboard'],['preview','Player View'],['scores','Published scoreboard'],['finale','Grand finale']]:[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']];
- $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${hostBack?'<a class="btn secondary peak-host-return" href="./?host=1" aria-label="Return to Host Dashboard">← Host Dashboard</a>':''}${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>state.role==='host'&&id==='home'?`<a class="peak-host-nav ${state.page===id?'active':''}" href="./?host=1">Host dashboard</a>`:`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
+ $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${hostBack?'<a class="btn secondary peak-host-return" href="./host.html" aria-label="Return to Host Dashboard">← Host Dashboard</a>':''}${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>state.role==='host'&&id==='home'?`<a class="peak-host-nav ${state.page===id?'active':''}" href="./host.html">Host dashboard</a>`:`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
  document.querySelectorAll('[data-nav]').forEach(x=>x.onclick=()=>navigate(x.dataset.nav));document.querySelectorAll('[data-a="logout"]').forEach(x=>x.onclick=logout);
  document.querySelectorAll('[data-a="login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='login';render()});document.querySelectorAll('[data-a="host-login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='host-login';render()});
  if(!configured){insert('Launch setup required.',section('<h2>Secure backend not connected</h2><p>This project is ready for a dedicated Supabase project. Configure the public URL and publishable key in <code>live-config.js</code>, deploy the database migration and Edge Function, then connect a host account.</p><p>Until then, the unlimited-retry <a href="lab.html">mini-game lab</a> is available. No real accounts or championship points are active.</p>'));return}
@@ -171,7 +171,7 @@ function hostPreview(){
  const choices=[{id:'demo',name:'Example participant (no account)'}].concat(participants.map(p=>({id:p.id,name:`${p.first_name} ${p.surname} (${p.site_code})`})));
  insert('Player View — Host Preview',`<div class="stack">
  ${section(`<div class="eyebrow">HOST TEST MODE · READ-ONLY</div><p>See the participant experience without leaving your host account. No entries, PINs, game attempts or scores are changed.</p>
- <div class="live-action"><label for="preview-person">View as</label><select id="preview-person" class="peak-preview-select">${choices.map(c=>`<option value="${clean(c.id)}" ${((who&&who.id===c.id)||(!who&&c.id==='demo'))?'selected':''}>${clean(c.name)}</option>`).join('')}</select><button class="btn secondary" id="preview-refresh">Refresh</button><a class="btn peak-host-return" id="preview-back-host" href="./?host=1">← Back to Host Dashboard</a></div>`)}
+ <div class="live-action"><label for="preview-person">View as</label><select id="preview-person" class="peak-preview-select">${choices.map(c=>`<option value="${clean(c.id)}" ${((who&&who.id===c.id)||(!who&&c.id==='demo'))?'selected':''}>${clean(c.name)}</option>`).join('')}</select><button class="btn secondary" id="preview-refresh">Refresh</button><a class="btn peak-host-return" id="preview-back-host" href="./host.html">← Back to Host Dashboard</a></div>`)}
  <div class="peak-preview-frame"><div class="peak-preview-head"><span>SOUTHERN CLUSTER</span><b>TASKMASTER PEAK 26</b><small>PARTICIPANT PREVIEW · ${clean(first)}</small></div>
  <nav class="peak-preview-tabs">${[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']].map(([k,name])=>`<button class="${tab===k?'active':''}" data-preview-tab="${k}">${name}</button>`).join('')}</nav>
  <div class="peak-preview-content">${content}</div></div>
@@ -239,4 +239,4 @@ function finale(){
 }
 begin();
 
-if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if('serviceWorker' in navigator && location.protocol==='https:' && !location.pathname.endsWith('/host.html')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
