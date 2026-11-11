@@ -29,3 +29,9 @@
 .peak-music-toggle:focus-visible{outline:3px solid #f7da9f;outline-offset:2px}
 .peak-music-status{font:12px 'DM Sans',sans-serif;color:#f9d9b1}
 @media(max-width:600px){.peak-music-controls{width:100%;order:3;gap:7px}.peak-music-status{width:100%}}
+
+/* Host recovery links are real navigation, independent of SPA event handlers. */
+a.peak-host-return{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;line-height:1.25}
+.live-nav a.peak-host-nav{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;min-height:44px;background:#31090fb9;color:#f3dec4;border:1px solid #8f6c4b;border-radius:8px;padding:10px 14px}
+.live-nav a.peak-host-nav.active{background:#a2773d;color:white}
+.live-nav a.peak-host-nav:hover{background:#864a2b;color:#fff5dc}
