@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const clean=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const configured=Boolean(LIVE_CONFIG.supabaseUrl&&LIVE_CONFIG.publishableKey);
 const URL=LIVE_CONFIG.supabaseUrl.replace(/\/$/,'');
-const state={session:localStorage.getItem('peak26-session')||'',hostJwt:sessionStorage.getItem('peak26-host')||'',role:null,page:'home',profile:null,config:null,me:null,board:null,host:null,week:1,task:'prize',message:null,error:false,gameStop:null,invite:''};
+const state={session:localStorage.getItem('peak26-session')||'',hostJwt:sessionStorage.getItem('peak26-host')||'',role:null,page:'home',profile:null,config:null,me:null,board:null,host:null,week:1,task:'prize',message:null,error:false,gameStop:null,invite:'',previewPerson:'demo',previewTab:'home',previewWeek:1,previewBoard:null,previewLoading:false,previewError:''};
 function date(s){return new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(s))}
 function notice(message,error=false){state.message=message;state.error=error;render()}
 function insert(title,body){$('view').innerHTML=`<div class="eyebrow">SOUTHERN CLUSTER CHAMPIONSHIP</div><h1 class="title">${title}</h1>${body}`}
@@ -38,12 +38,12 @@ async function begin(){
 }
 function render(){
  const logged=state.role==='player'||state.role==='host';
- const tabs=state.role==='host'?[['home','Host dashboard'],['scores','Published scoreboard'],['finale','Grand finale']]:[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']];
+ const tabs=state.role==='host'?[['home','Host dashboard'],['preview','Player View'],['scores','Published scoreboard'],['finale','Grand finale']]:[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']];
  $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
  document.querySelectorAll('[data-nav]').forEach(x=>x.onclick=()=>navigate(x.dataset.nav));document.querySelectorAll('[data-a="logout"]').forEach(x=>x.onclick=logout);
  document.querySelectorAll('[data-a="login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='login';render()});document.querySelectorAll('[data-a="host-login"]').forEach(x=>x.onclick=()=>{state.role=null;state.page='host-login';render()});
  if(!configured){insert('Launch setup required.',section('<h2>Secure backend not connected</h2><p>This project is ready for a dedicated Supabase project. Configure the public URL and publishable key in <code>live-config.js</code>, deploy the database migration and Edge Function, then connect a host account.</p><p>Until then, the unlimited-retry <a href="lab.html">mini-game lab</a> is available. No real accounts or championship points are active.</p>'));return}
- if(state.role==='host'){({home:hostHome,scores:showScores,finale:finale}[state.page]||hostHome)();return}
+ if(state.role==='host'){({home:hostHome,preview:hostPreview,scores:showScores,finale:finale}[state.page]||hostHome)();return}
  if(state.role==='player'){({home:playerHome,tasks:showTasks,prize:showPrize,activity:showActivity,scores:showScores,profile:profile,practice:practice}[state.page]||playerHome)();return}
  if(state.page==='register')register();else if(state.page==='host-login')hostScreen();else login();
 }
@@ -70,8 +70,8 @@ const personName=id=>{const p=state.host?.participants.find(x=>x.id===id);return
 async function hostCall(action,data={}){const out=await api(action,data,true);await refreshHost();return out}
 function hostHome(){
  const d=state.host||{participants:[],prizes:[],attempts:[],judgments:[],publications:[],rounds:[]};
- insert('Host Control Room.',`<div class="stack">${section(`<h2>Competition control</h2><p>Everything below is PRIVATE. Judging proposals, full names and final-week rankings must never appear on the participant dashboard.</p><div class="live-cols"><div class="live-card"><h3>Participants</h3><strong>${d.participants.filter(p=>p.active).length}/11</strong></div><div class="live-card"><h3>Prize entries</h3><strong>${d.prizes.length}</strong></div><div class="live-card"><h3>Submitted attempts</h3><strong>${d.attempts.filter(a=>a.status==='submitted').length}</strong></div></div>`)}${section(`<h2>Judging, approval and publication</h2><p>Close each round before judging. AI generates proposals; you review and order all entries before approving. Nothing is released without a second explicit publication action.</p><div class="live-list">${d.rounds.map(r=>{const p=d.publications.find(x=>x.round_id===r.id);return `<div><b>Week ${r.id} — ${clean(r.prize_title)}</b><p>Deadline: ${date(r.ends_at)} · ${p?.released_at?'Published':p?.judging_approved_at?'Approved, not published':'Not approved'}</p><div class="live-action">${button('Review entries','review-'+r.id,'secondary')}${button('Judge prize','judge-prize-'+r.id)}${button('Judge activity','judge-activity-'+r.id)}${button('Approve round','approve-'+r.id,'secondary')}${r.id<4?button('Publish weekly results','publish-'+r.id):button('Release after Zoom finale','final-release-'+r.id)}</div></div>`}).join('')}</div>`)}${section(`<h2>Participant accounts and portraits</h2><div class="live-list">${d.participants.map(p=>`<div class="live-top"><div><b>${clean(p.first_name+' '+p.surname)}</b> — ${clean(p.site_code)} ${p.active?'':'(inactive)'} <small>Portrait: ${clean(p.portrait_status)}</small>${p.portraitUrl?`<br><img src="${clean(p.portraitUrl)}" class="live-portrait" alt="Submitted portrait">`:''}</div><div>${p.portrait_status==='pending'?button('Approve photo','portrait-approve-'+p.id):''}${p.portrait_status==='pending'?button('Reject','portrait-reject-'+p.id,'secondary'):''}${button('Reset PIN','pin-'+p.id,'secondary')}${p.active?button('Deactivate','deactivate-'+p.id,'secondary'):''}${button('Upload portrait','hostphoto-'+p.id,'secondary')}</div></div>`).join('')}</div>`)}${section(`<h2>Unfinished technical attempts</h2><p>These have been started but not submitted. Restore only after checking for genuine technical failure.</p><div class="live-list">${d.attempts.filter(a=>a.status==='started').map(a=>`<div><b>${clean(personName(a.player_id))}</b> · Week ${a.round_id}, attempt ${a.attempt_no} ${button('Restore attempt','restore-'+a.id,'secondary')}</div>`).join('')||'<p>No incomplete attempts.</p>'}</div>`)}${section(`<h2>Official site logos</h2><p>Upload LCY8, STN8 and SXW2 logos when approved artwork is available.</p><div class="live-action">${['LCY8','STN8','SXW2'].map(s=>button(`Upload ${s}`,'logo-'+s,'secondary')).join('')}</div>`)}${section(`<h2>Deadline controls</h2><p>Changing an open round's deadline must be communicated to all participants.</p>${d.rounds.map(r=>`<div><label>Week ${r.id} deadline (local displayed as UTC here)<input type="datetime-local" id="deadline-${r.id}" value="${r.ends_at.slice(0,16)}"></label> ${button('Save deadline','deadline-'+r.id,'secondary')}</div>`).join('')}`)}</div>`);
- document.querySelectorAll('[data-a]').forEach(b=>{const key=b.dataset.a;if(key==='logout')return;
+ insert('Host Control Room.',`<div class="stack">${section(`<h2>Competition control</h2><div class="actions" style="margin:12px 0">${button('Preview participant view','preview-player','secondary')}</div><p>Everything below is PRIVATE. Judging proposals, full names and final-week rankings must never appear on the participant dashboard.</p><div class="live-cols"><div class="live-card"><h3>Participants</h3><strong>${d.participants.filter(p=>p.active).length}/11</strong></div><div class="live-card"><h3>Prize entries</h3><strong>${d.prizes.length}</strong></div><div class="live-card"><h3>Submitted attempts</h3><strong>${d.attempts.filter(a=>a.status==='submitted').length}</strong></div></div>`)}${section(`<h2>Judging, approval and publication</h2><p>Close each round before judging. AI generates proposals; you review and order all entries before approving. Nothing is released without a second explicit publication action.</p><div class="live-list">${d.rounds.map(r=>{const p=d.publications.find(x=>x.round_id===r.id);return `<div><b>Week ${r.id} — ${clean(r.prize_title)}</b><p>Deadline: ${date(r.ends_at)} · ${p?.released_at?'Published':p?.judging_approved_at?'Approved, not published':'Not approved'}</p><div class="live-action">${button('Review entries','review-'+r.id,'secondary')}${button('Judge prize','judge-prize-'+r.id)}${button('Judge activity','judge-activity-'+r.id)}${button('Approve round','approve-'+r.id,'secondary')}${r.id<4?button('Publish weekly results','publish-'+r.id):button('Release after Zoom finale','final-release-'+r.id)}</div></div>`}).join('')}</div>`)}${section(`<h2>Participant accounts and portraits</h2><div class="live-list">${d.participants.map(p=>`<div class="live-top"><div><b>${clean(p.first_name+' '+p.surname)}</b> — ${clean(p.site_code)} ${p.active?'':'(inactive)'} <small>Portrait: ${clean(p.portrait_status)}</small>${p.portraitUrl?`<br><img src="${clean(p.portraitUrl)}" class="live-portrait" alt="Submitted portrait">`:''}</div><div>${p.portrait_status==='pending'?button('Approve photo','portrait-approve-'+p.id):''}${p.portrait_status==='pending'?button('Reject','portrait-reject-'+p.id,'secondary'):''}${button('Reset PIN','pin-'+p.id,'secondary')}${p.active?button('Deactivate','deactivate-'+p.id,'secondary'):''}${button('Upload portrait','hostphoto-'+p.id,'secondary')}</div></div>`).join('')}</div>`)}${section(`<h2>Unfinished technical attempts</h2><p>These have been started but not submitted. Restore only after checking for genuine technical failure.</p><div class="live-list">${d.attempts.filter(a=>a.status==='started').map(a=>`<div><b>${clean(personName(a.player_id))}</b> · Week ${a.round_id}, attempt ${a.attempt_no} ${button('Restore attempt','restore-'+a.id,'secondary')}</div>`).join('')||'<p>No incomplete attempts.</p>'}</div>`)}${section(`<h2>Official site logos</h2><p>Upload LCY8, STN8 and SXW2 logos when approved artwork is available.</p><div class="live-action">${['LCY8','STN8','SXW2'].map(s=>button(`Upload ${s}`,'logo-'+s,'secondary')).join('')}</div>`)}${section(`<h2>Deadline controls</h2><p>Changing an open round's deadline must be communicated to all participants.</p>${d.rounds.map(r=>`<div><label>Week ${r.id} deadline (local displayed as UTC here)<input type="datetime-local" id="deadline-${r.id}" value="${r.ends_at.slice(0,16)}"></label> ${button('Save deadline','deadline-'+r.id,'secondary')}</div>`).join('')}`)}</div>`);
+ document.querySelectorAll('[data-a]').forEach(b=>{const key=b.dataset.a;if(key==='logout')return;if(key==='preview-player'){state.previewTab='home';navigate('preview');return;}
  if(key.startsWith('review-'))b.onclick=()=>{state.week=+key.split('-')[1];state.page='review';hostReview()};
  if(key.startsWith('judge-'))b.onclick=async()=>{const [,kind,round]=key.split('-');if(!confirm(`Ask AI Peccy to judge Week ${round} ${kind} entries? This uses configured API credits.`))return;try{const a=await hostCall('host-judge-task',{round:+round,kind});notice(`Week ${round} ${kind}: ${a.entries} entries judged, ${a.ties} tied positions. Review before approving.`)}catch(e){notice(e.message,true)}};
  if(key.startsWith('approve-'))b.onclick=async()=>{const round=+key.split('-')[1];if(!confirm(`Approve all Week ${round} rankings? Afterwards they are locked.`))return;try{await hostCall('host-approve',{round});notice('Judging approved. Results are not public until you publish them.')}catch(e){notice(e.message,true)}};
@@ -84,6 +84,87 @@ function hostHome(){
  if(key.startsWith('hostphoto-')||key.startsWith('logo-'))b.onclick=async()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{try{const photo=await compress(input.files[0]);const a=key.startsWith('logo-')?'host-upload-logo':'host-upload-portrait';await hostCall(a,key.startsWith('logo-')?{site:key.slice(5),photo}:{playerId:key.slice(10),photo});notice('Artwork uploaded successfully.')}catch(e){notice(e.message,true)}};input.click()};
  if(key.startsWith('deadline-'))b.onclick=async()=>{const round=+key.split('-')[1],v=$(`deadline-${round}`).value;if(!v)return;const starts=d.rounds.find(x=>x.id===round).starts_at;try{await hostCall('host-set-deadline',{round,startsAt:starts,endsAt:v+'Z'});notice('Deadline updated. Make sure participants are informed.')}catch(e){notice(e.message,true)}};
  })
+}
+function hostPreview(){
+ const d=state.host||{participants:[],prizes:[],attempts:[]};
+ const participants=d.participants||[];
+ const who=participants.find(p=>p.id===state.previewPerson)||null;
+ const site=who?.site_code||'LCY8',first=who?.first_name||'Example',publicName=who?.public_alias||first;
+ const prizeEntries=who?(d.prizes||[]).filter(x=>x.player_id===who.id&&x.status==='final'):[];
+ const attempts=who?(d.attempts||[]).filter(x=>x.player_id===who.id):[];
+ const rounds=state.config?.rounds||[];
+ const next=rounds.find(r=>Date.now()<Date.parse(r.ends_at));
+ const tab=state.previewTab||'home',week=state.previewWeek||1,r=rounds.find(x=>x.id===week),task=ROUNDS[week-1];
+ let content='';
+ if(tab==='home'){
+  content=`<h2>Welcome, ${clean(first)}.</h2><div class="eyebrow">${clean(site)} · PEAK 26</div>
+  <p>${next?(upcoming(next)?'The competition is approaching.':'The task envelopes are open.'):'Peccy has finished taking submissions.'}</p>
+  ${next?`<p>Next deadline: <b>${date(next.ends_at)}</b></p>`:''}
+  <div class="live-cols"><div class="live-card"><h3>Prize entries</h3><strong>${prizeEntries.length} of 4</strong></div>
+  <div class="live-card"><h3>Game attempts</h3><strong>${attempts.filter(a=>a.status==='submitted').length} of 8</strong></div></div>
+  <div class="actions" style="margin:16px 0"><button class="btn" data-preview-tab="tasks">View task envelopes</button><button class="btn secondary" data-preview-tab="practice">Practice a mini-game</button></div>
+  <h2>How it works</h2><p>One original photo with a 1–50 word pitch, final on submission. Two official attempts at each mini-game. Peccy judges, the host approves, and results appear when published.</p><p>The final results remain sealed until the Zoom grand finale.</p>`;
+ }else if(tab==='tasks'){
+  content=`<h2>The task envelopes.</h2>${rounds.map(w=>`<div class="live-result">
+  <div class="eyebrow">WEEK ${w.id} · ${date(w.starts_at)} – ${date(w.ends_at)}</div>
+  <h3>${w.id===4?'THE FINAL ROUND':`ROUND ${w.id}`}</h3>
+  <p>${upcoming(w)?'The envelopes are sealed until Wednesday 18:00.':active(w)?'Entries are open. Your time starts now.':'This week has closed.'}</p>
+  <div class="live-cols"><div class="live-card"><h3>Prize task</h3><p>${upcoming(w)?'Sealed':clean(w.prize_title)}</p>
+  <button class="btn secondary" data-preview-task="prize" data-week="${w.id}" ${upcoming(w)?'disabled':''}>${active(w)?'Open envelope':'View entry'}</button></div>
+  <div class="live-card"><h3>Activity task</h3><p>${upcoming(w)?'Sealed':clean(w.activity_title)}</p>
+  <button class="btn secondary" data-preview-task="activity" data-week="${w.id}" ${upcoming(w)?'disabled':''}>${active(w)?'Play challenge':'View attempts'}</button></div></div></div>`).join('')}`;
+ }else if(tab==='prize'&&r&&task&&!upcoming(r)){
+  const existing=prizeEntries.find(p=>p.round_id===week);
+  content=`<button class="btn secondary" data-preview-tab="tasks">← All envelopes</button><h2>${clean(task.prize)}</h2><div class="eyebrow">YOUR TASK</div><p class="taskcopy">${clean(task.prizeText)}</p><p><b>One photograph + 1–50 word pitch. Final on submission.</b></p>
+  ${existing?`<div class="live-result"><h3>✓ Entry submitted</h3><p>Your photograph and pitch are locked.</p></div>`:active(r)?`<form class="live-form"><label>Choose your photograph<input type="file" accept="image/*" disabled></label><label>Your pitch (maximum 50 words)<textarea placeholder="Convince Peccy why this deserves five points" disabled></textarea></label><p>0 / 50 words</p><button class="btn" disabled>Preview and submit final entry</button></form>`:'<p>This round has closed.</p>'}`;
+ }else if(tab==='activity'&&r&&task&&!upcoming(r)){
+  const past=attempts.filter(x=>x.round_id===week);
+  content=`<button class="btn secondary" data-preview-tab="tasks">← All envelopes</button><h2>${clean(task.game)}</h2><div class="eyebrow">YOUR TASK</div><p class="taskcopy">${clean(task.taskText)}</p><p>Two official attempts. Objective results appear now; Peccy's creativity scores remain secret.</p>
+  <h3>Your attempts</h3>${past.length?past.map(a=>`<div class="live-result"><b>Attempt ${a.attempt_no}</b> · ${clean(a.status)} ${a.status==='submitted'?`· objective score ${clean(a.objective_score)}/50`:''}<p>${clean(a.summary||'')}</p><i>${clean(a.preview_comment||'')}</i></div>`).join(''):'<p>No official attempts yet.</p>'}
+  ${active(r)?`<button class="btn secondary" id="preview-game-button">Try game (preview only)</button><p class="sub small">Practice here never uses a real attempt or saves a score.</p><div id="preview-game-slot"></div>`:'<p>This round is closed.</p>'}`;
+ }else if(tab==='scores'){
+  if(!state.previewBoard&&!state.previewLoading&&!state.previewError){
+   state.previewLoading=true;
+   api('leaderboard',{},true).then(data=>{state.previewBoard=data;state.previewError=''}).catch(e=>{state.previewError=e.message}).finally(()=>{state.previewLoading=false;if(state.role==='host'&&state.page==='preview'&&state.previewTab==='scores')hostPreview()});
+  }
+  const b=state.previewBoard;
+  content=`<h2>The championship scoreboard.</h2><p>Only approved and released results appear here. The finale remains sealed until published.</p>
+  ${state.previewError?`<p class="live-pending">${clean(state.previewError)}</p>`:!b?'<p>Loading published scores…</p>':`
+  <h3>Individual championship</h3><div class="score-grid">${b.participants.map(p=>`<div class="person"><div class="frame">${p.portrait?`<img src="${clean(p.portrait)}" alt="Approved portrait" style="width:100%;height:100%;object-fit:cover">`:'♟'}</div><span class="seal">${p.points}</span><div class="name">${clean(p.name)}</div><small>${clean(p.site)}</small></div>`).join('')}</div>
+  <h3>Site championship</h3><div class="live-cols">${b.sites.map(s=>`<div class="live-card"><h3>${clean(s.code)}</h3><p><span class="seal">${s.average}</span> Average points</p><small>${s.capacity} participants</small></div>`).join('')}</div>
+  <h3>Released weekly verdicts</h3>${b.publishedRounds.length?b.publishedRounds.slice().sort().map(n=>`<h3>Week ${n}</h3>${b.judgments.filter(j=>j.round_id===n).map(j=>{const person=b.participants.find(p=>p.id===j.player_id);return `<div class="live-result"><b>${clean(person?.name||'Participant')} · ${clean(j.task_type)} · ${j.points} pts</b><p>${clean(j.verdict)}</p></div>`}).join('')}`).join(''):'<p>No judging has been released yet.</p>'}`}`;
+ }else if(tab==='profile'){
+  content=`<h2>Your profile.</h2><p><b>${clean(publicName)}</b> · ${clean(site)}</p><p>Only your first name appears on public scoreboards.</p><p>Portrait status: <b>${clean(who?.portrait_status||'none')}</b></p><form class="live-form"><label>Optional portrait (host approval required)<input type="file" accept="image/*" disabled></label><p>Approved portraits may appear in the app, results graphics and final presentation. You may choose not to upload a portrait.</p><button class="btn" disabled>Send portrait for approval</button></form>`;
+ }else if(tab==='practice'){
+  content='<h2>Peccy’s Lost Biscuit.</h2><p>Unlimited practice attempts. Nothing counts towards the championship.</p><div id="preview-practice-slot"></div>';
+ }else{
+  state.previewTab='tasks';
+  content='<p>The envelope is sealed. Come back when this round opens.</p><button class="btn secondary" data-preview-tab="tasks">Back to tasks</button>';
+ }
+ const choices=[{id:'demo',name:'Example participant (no account)'}].concat(participants.map(p=>({id:p.id,name:`${p.first_name} ${p.surname} (${p.site_code})`})));
+ insert('Player View — Host Preview',`<div class="stack">
+ ${section(`<div class="eyebrow">HOST TEST MODE · READ-ONLY</div><p>See the participant experience without leaving your host account. No entries, PINs, game attempts or scores are changed.</p>
+ <div class="live-action"><label for="preview-person">View as</label><select id="preview-person" class="peak-preview-select">${choices.map(c=>`<option value="${clean(c.id)}" ${((who&&who.id===c.id)||(!who&&c.id==='demo'))?'selected':''}>${clean(c.name)}</option>`).join('')}</select><button class="btn secondary" id="preview-refresh">Refresh</button><button class="btn" id="preview-back-host">Back to Host</button></div>`)}
+ <div class="peak-preview-frame"><div class="peak-preview-head"><span>SOUTHERN CLUSTER</span><b>TASKMASTER PEAK 26</b><small>PARTICIPANT PREVIEW · ${clean(first)}</small></div>
+ <nav class="peak-preview-tabs">${[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']].map(([k,name])=>`<button class="${tab===k?'active':''}" data-preview-tab="${k}">${name}</button>`).join('')}</nav>
+ <div class="peak-preview-content">${content}</div></div>
+ </div>`);
+ document.querySelector('#preview-person').onchange=e=>{state.previewPerson=e.target.value;state.previewTab='home';if(state.gameStop){state.gameStop();state.gameStop=null}hostPreview()};
+ document.querySelector('#preview-back-host').onclick=()=>navigate('home');
+ document.querySelector('#preview-refresh').onclick=async()=>{try{await refreshHost();state.previewBoard=null;state.previewError='';hostPreview()}catch(e){notice(e.message,true)}};
+ document.querySelectorAll('[data-preview-tab]').forEach(el=>el.onclick=()=>{if(state.gameStop){state.gameStop();state.gameStop=null}state.previewTab=el.dataset.previewTab;hostPreview()});
+ document.querySelectorAll('[data-preview-task]').forEach(el=>el.onclick=()=>{if(state.gameStop){state.gameStop();state.gameStop=null}state.previewWeek=Number(el.dataset.week);state.previewTab=el.dataset.previewTask;hostPreview()});
+ if(tab==='practice')state.gameStop=mountPractice(document.querySelector('#preview-practice-slot'));
+ if(tab==='activity'&&r&&active(r)){
+  const btn=document.querySelector('#preview-game-button');
+  if(btn)btn.onclick=()=>{
+   if(state.gameStop){state.gameStop();state.gameStop=null}
+   const holder=document.querySelector('#preview-game-slot');
+   btn.disabled=true;btn.textContent='Practice game running';
+   const seed=crypto.getRandomValues(new Uint32Array(1))[0];
+   state.gameStop=mountGame(holder,week,()=>{holder.insertAdjacentHTML('beforeend','<p class="live-pending">Practice finished — no official attempt recorded.</p>')},{seed});
+  };
+ }
 }
 function hostReview(){
  const round=state.week,d=state.host;const participants=d.participants.filter(x=>x.active);
