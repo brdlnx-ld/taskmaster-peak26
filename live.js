@@ -5,25 +5,45 @@ const $=id=>document.getElementById(id);
 const clean=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const configured=Boolean(LIVE_CONFIG.supabaseUrl&&LIVE_CONFIG.publishableKey);
 const URL=LIVE_CONFIG.supabaseUrl.replace(/\/$/,'');
-const state={session:localStorage.getItem('peak26-session')||'',hostJwt:sessionStorage.getItem('peak26-host')||'',role:null,page:'home',profile:null,config:null,me:null,board:null,host:null,week:1,task:'prize',message:null,error:false,gameStop:null,invite:'',previewPerson:'demo',previewTab:'home',previewWeek:1,previewBoard:null,previewLoading:false,previewError:''};
+const state={session:localStorage.getItem('peak26-session')||'',hostJwt:sessionStorage.getItem('peak26-host')||'',hostRefreshToken:sessionStorage.getItem('peak26-host-refresh')||'',role:null,page:'home',profile:null,config:null,me:null,board:null,host:null,week:1,task:'prize',message:null,error:false,gameStop:null,invite:'',previewPerson:'demo',previewTab:'home',previewWeek:1,previewBoard:null,previewLoading:false,previewError:''};
 function date(s){return new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(s))}
 function notice(message,error=false){state.message=message;state.error=error;render()}
 function insert(title,body){$('view').innerHTML=`<div class="eyebrow">SOUTHERN CLUSTER CHAMPIONSHIP</div><h1 class="title">${title}</h1>${body}`}
 function section(body){return `<section class="paper">${body}</section>`}
 function button(text,act,style=''){return `<button class="btn ${style}" data-a="${act}">${text}</button>`}
-async function api(action,data={},host=false){
+async function api(action,data={},host=false,allowRetry=true){
  if(!configured)throw Error('The separate championship backend has not been configured.');
  const headers={'content-type':'application/json','apikey':LIVE_CONFIG.publishableKey};
- if(host){if(!state.hostJwt)throw Error('Please sign in as host');headers.authorization=`Bearer ${state.hostJwt}`}
+ if(host){if(!state.hostJwt && allowRetry && await renewHostToken())return api(action,data,true,false);if(!state.hostJwt)throw Error('Please sign in as host');headers.authorization=`Bearer ${state.hostJwt}`}
  else if(state.session)headers['x-peak-session']=state.session;
  const res=await fetch(`${URL}/functions/v1/peak26-api`,{method:'POST',headers,body:JSON.stringify({action,...data})});
+ if(host && res.status===401 && allowRetry && await renewHostToken())return api(action,data,true,false);
  let body;try{body=await res.json()}catch{throw Error(`Connection failed (HTTP ${res.status})`)}
  if(!res.ok)throw Error(body.error||`Request failed (HTTP ${res.status})`);return body;
+}
+async function renewHostToken(){
+  const refresh=state.hostRefreshToken;
+  if(!refresh)return false;
+  try{
+    const res=await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`,{
+      method:'POST',
+      headers:{'apikey':LIVE_CONFIG.publishableKey,'content-type':'application/json'},
+      body:JSON.stringify({refresh_token:refresh})
+    });
+    if(!res.ok)return false;
+    const tokens=await res.json();
+    if(!tokens.access_token)return false;
+    state.hostJwt=tokens.access_token;
+    state.hostRefreshToken=tokens.refresh_token||refresh;
+    sessionStorage.setItem('peak26-host',state.hostJwt);
+    sessionStorage.setItem('peak26-host-refresh',state.hostRefreshToken);
+    return true;
+  }catch{return false}
 }
 async function hostLogin(email,password){
  const res=await fetch(`${URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'apikey':LIVE_CONFIG.publishableKey,'content-type':'application/json'},body:JSON.stringify({email,password})});
  const data=await res.json();if(!res.ok)throw Error(data.error_description||data.msg||'Host login failed');
- state.hostJwt=data.access_token;sessionStorage.setItem('peak26-host',data.access_token);await refreshHost();
+ state.hostJwt=data.access_token;state.hostRefreshToken=data.refresh_token||'';sessionStorage.setItem('peak26-host',state.hostJwt);if(state.hostRefreshToken)sessionStorage.setItem('peak26-host-refresh',state.hostRefreshToken);await refreshHost();
 }
 async function refreshHost(){state.host=await api('host-dashboard',{},true);state.role='host'}
 async function refreshPlayer(){state.me=await api('me');state.profile=state.me.profile;state.role='player'}
@@ -33,7 +53,7 @@ async function begin(){
  const hash=location.hash.match(/invite=([a-zA-Z0-9-]+)/);if(hash){state.invite=hash[1];sessionStorage.setItem('peak26-invite',state.invite);history.replaceState(null,'',location.pathname+location.search)}
  else state.invite=sessionStorage.getItem('peak26-invite')||'';
  if(!configured){render();return}
- try{state.config=await api('config');if(state.hostJwt){try{await refreshHost()}catch{sessionStorage.removeItem('peak26-host');state.hostJwt=''}}if(!state.role&&state.session){try{await refreshPlayer()}catch{localStorage.removeItem('peak26-session');state.session=''}}}
+ try{state.config=await api('config');if(state.hostJwt||state.hostRefreshToken){try{await refreshHost()}catch{sessionStorage.removeItem('peak26-host');sessionStorage.removeItem('peak26-host-refresh');state.hostJwt='';state.hostRefreshToken=''}}if(!state.role&&state.session){try{await refreshPlayer()}catch{localStorage.removeItem('peak26-session');state.session=''}}}
  catch(e){state.message=e.message;state.error=true}
  if(requestHost){
    state.page=state.role==='host'?'home':'host-login';
@@ -44,7 +64,7 @@ async function begin(){
 }
 function render(){
  const logged=state.role==='player'||state.role==='host';
- const hostBack=(state.role==='host'&&state.page!=='home')||(state.role==='player'&&Boolean(state.hostJwt));
+ const hostBack=(state.role==='host'&&state.page!=='home')||(state.role==='player'&&Boolean(state.hostJwt||state.hostRefreshToken));
  const tabs=state.role==='host'?[['home','Host dashboard'],['preview','Player View'],['scores','Published scoreboard'],['finale','Grand finale']]:[['home','Home'],['tasks','Tasks'],['scores','Scores'],['profile','Profile']];
  $('app').innerHTML=`<div class="live-shell"><header class="live-header"><div class="live-brand"><span>SOUTHERN CLUSTER</span>TASKMASTER PEAK 26</div><div class="live-action">${hostBack?'<a class="btn secondary peak-host-return" href="./?host=1" aria-label="Return to Host Dashboard">← Host Dashboard</a>':''}${logged?`<span>${clean(state.role==='host'?'HOST':state.profile?.firstName||'Participant')}</span>${button('Sign out','logout','secondary')}`:`${button('Participant login','login','secondary')}${button('Host login','host-login','secondary')}`}</div></header>${logged?`<nav class="live-nav">${tabs.map(([id,t])=>`<button class="${state.page===id?'active':''}" data-nav="${id}">${t}</button>`).join('')}</nav>`:''}${state.message?`<div class="live-msg ${state.error?'error':''}" role="alert">${clean(state.message)}</div>`:''}<div id="view"></div><p class="footer">3 sites · 11 participants · 8 tasks · 1 Taskmaster · All times GMT</p></div>`;
  document.querySelectorAll('[data-nav]').forEach(x=>x.onclick=()=>navigate(x.dataset.nav));document.querySelectorAll('[data-a="logout"]').forEach(x=>x.onclick=logout);
@@ -57,7 +77,7 @@ function render(){
 function login(){insert('Enter the competition.',section(`<p class="taskcopy">Peccy remembers every questionable decision. Your four-digit PIN will do.</p><form id="login-form" class="live-form"><label>First name<input name="first" required maxlength="60" autocomplete="given-name"></label><label>Surname<input name="last" required maxlength="60" autocomplete="family-name"></label><label>Site<select name="site"><option>LCY8</option><option>STN8</option><option>SXW2</option></select></label><label>Four-digit PIN<input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="4" pattern="[0-9]{4}" required autocomplete="off"></label><button class="btn">Sign in</button></form><div class="actions" style="margin-top:16px">${button('New participant registration','register','secondary')}</div>`));$('login-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);try{const data=await api('login',{firstName:f.get('first'),surname:f.get('last'),site:f.get('site'),pin:f.get('pin')});state.session=data.session;localStorage.setItem('peak26-session',data.session);await refreshPlayer();state.message=null;navigate('home')}catch(e){notice(e.message,true)}};document.querySelector('[data-a="register"]').onclick=()=>navigate('register')}
 function register(){const c=state.config?.sites||[];insert('Register for PEAK 26.',section(`<p>Registration is instant while places remain. Use your own first name, surname and four-digit PIN.</p><form id="register-form" class="live-form"><label>First name<input name="first" maxlength="60" required></label><label>Surname<input name="last" maxlength="60" required></label><label>Your site<select name="site">${c.map(s=>`<option ${s.registered>=s.capacity?'disabled':''} value="${clean(s.code)}">${clean(s.code)} — ${s.capacity-s.registered} places remaining</option>`).join('')}</select></label><label>Create PIN<input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="4" pattern="[0-9]{4}" required></label><label>Confirm PIN<input name="again" type="password" inputmode="numeric" minlength="4" maxlength="4" pattern="[0-9]{4}" required></label><p class="sub small">An unlisted registration link is not identity verification. Your full name is visible only to the host. Public scoreboards show first names only.</p><button class="btn">Create my account</button></form>`));$('register-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);if(f.get('pin')!==f.get('again'))return notice('The PINs do not match',true);try{const data=await api('register',{invite:state.invite,firstName:f.get('first'),surname:f.get('last'),site:f.get('site'),pin:f.get('pin')});state.session=data.session;localStorage.setItem('peak26-session',data.session);await refreshPlayer();state.message='Registration complete. Peccy has been notified of your questionable judgement.';navigate('home')}catch(e){notice(e.message,true)}}}
 function hostScreen(){insert('The Host Control Room.',section(`<p>Host access uses a separate Supabase Auth account and a verified host whitelist — not a participant PIN.</p><form class="live-form" id="host-form"><label>Host email<input name="email" type="email" required></label><label>Password<input name="password" type="password" required></label><button class="btn">Enter judging chamber</button></form>`));$('host-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);try{await hostLogin(f.get('email'),f.get('password'));state.message=null;navigate('home')}catch(e){notice(e.message,true)}}}
-async function logout(){if(state.role==='player'&&state.session){try{await api('logout')}catch{}}localStorage.removeItem('peak26-session');sessionStorage.removeItem('peak26-host');state.session='';state.hostJwt='';state.role=null;state.message=null;state.page='login';render()}
+async function logout(){if(state.role==='player'&&state.session){try{await api('logout')}catch{}}localStorage.removeItem('peak26-session');sessionStorage.removeItem('peak26-host');sessionStorage.removeItem('peak26-host-refresh');state.session='';state.hostJwt='';state.hostRefreshToken='';state.role=null;state.message=null;state.page='login';render()}
 function upcoming(r){return new Date(r.starts_at)>new Date()};function active(r){const now=Date.now();return now>=Date.parse(r.starts_at)&&now<Date.parse(r.ends_at)};
 function playerHome(){const profile=state.profile,rounds=state.config?.rounds||[],now=Date.now(),next=rounds.find(r=>now<Date.parse(r.ends_at));const subs=state.me?.prizes?.length||0,completed=state.me?.attempts?.filter(a=>a.status==='submitted').length||0;
  insert(`Welcome, ${clean(profile.firstName)}.`, `<div class="stack">${section(`<div class="eyebrow">${clean(profile.site)} · PEAK 26</div><h2>${next?upcoming(next)?'The competition is approaching.':'The task envelopes are open.':'Peccy has finished taking submissions.'}</h2>${next?`<p>Next deadline: <b>${date(next.ends_at)}</b></p>`:''}<div class="live-cols"><div class="live-card"><h3>Prize entries</h3><strong>${subs} of 4</strong></div><div class="live-card"><h3>Game attempts</h3><strong>${completed} of 8</strong></div></div><div class="actions" style="margin-top:16px">${button('View task envelopes','tasks')}${button('Practice a mini-game','practice','secondary')}</div>`)}${section('<h2>How it works</h2><p>One original photo with a 1–50 word pitch, final on submission. Two official attempts at each mini-game. Peccy judges, the host approves, and Wednesday results go to the app and Slack.</p><p>The final results remain sealed until the Zoom grand finale.</p>')}</div>`);
