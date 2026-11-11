@@ -113,8 +113,8 @@ import { LIVE_CONFIG } from './live-config.js';
   <div class="host-slack-badges"><strong>Webhook: ${ready?'Connected':'Not connected'}</strong><strong>Test: ${test?'Delivered':'Not tested'}</strong><strong>Automation: ${c.enabled?'ON':'OFF'}</strong></div>
   <p><strong>Schedule:</strong> Wednesday 18:00 task launches, Tuesday 18:00 deadline reminders, and results when you approve publication.</p>
   <p><strong>Finale protection:</strong> Week 4 results cannot be posted before the Zoom finale has been completed and the results released.</p>
-  ${ready?'':`<div class="host-slack-setup"><h3>Connect Slack</h3><p>Create a Slack incoming webhook for your chosen channel. In your Taskmaster Supabase project, save its URL in <strong>Vault</strong> under the exact name <code>peak26_slack_webhook</code>.</p><p>Never paste the webhook into chat or GitHub.</p><a href="https://supabase.com/dashboard/project/yydixabvablasptbkhhf/integrations/vault" target="_blank" rel="noopener noreferrer">Open Supabase Vault</a></div>`}
-  <div class="host-buttons">${btn('Refresh Slack connection','slack-refresh')}${btn('Send one test message','slack-test')}</div>
+  ${ready?'':`<div class="host-slack-setup"><h3>Connect Slack</h3><p>Create a Slack incoming webhook for your chosen channel. In your Taskmaster Supabase project, save its URL in <strong>Vault</strong> under the exact name <code>peak26_slack_webhook</code>.</p><p>Never paste the webhook into chat or GitHub.</p><a href="https://supabase.com/dashboard/project/yydixabvablasptbkhhf/integrations/vault/overview" target="_blank" rel="noopener noreferrer">Open Supabase Vault</a></div>`}
+  <div class="host-buttons">${btn('Refresh Slack connection','slack-refresh')}${ready?btn('Send one test message','slack-test'):'<button type="button" class="btn secondary" disabled title="Connect Slack first">Send one test message</button>'}</div>
  </section>
  <section class="paper"><h2>Automatic posts</h2>
   <p>Keep automation Off until you see the test message in the correct Slack channel. Settings affect future announcements only.</p>
